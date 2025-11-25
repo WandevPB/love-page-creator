@@ -1,8 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Heart, Music, ArrowLeft } from "lucide-react";
+import { Heart, Music, ArrowLeft, QrCode, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { QRCodeSVG } from "qrcode.react";
 import FloatingHearts from "@/components/FloatingHearts";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface PageData {
   recipientName: string;
@@ -59,6 +68,8 @@ const View = () => {
     );
   }
 
+  const currentUrl = window.location.href;
+
   return (
     <div className="min-h-screen romantic-gradient relative overflow-hidden">
       <FloatingHearts />
@@ -70,79 +81,134 @@ const View = () => {
             onClick={toggleMusic}
             variant="outline"
             size="icon"
-            className="fixed top-4 right-4 z-50 rounded-full bg-white/90 backdrop-blur-sm"
+            className="fixed top-4 right-16 z-50 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white"
           >
             <Music className={`w-5 h-5 ${isMusicPlaying ? "text-primary" : ""}`} />
           </Button>
         </>
       )}
 
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="fixed top-4 right-4 z-50 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white"
+          >
+            <QrCode className="w-5 h-5" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-center">Compartilhe esta página</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <QRCodeSVG value={currentUrl} size={256} level="H" />
+            <p className="text-sm text-muted-foreground text-center">
+              Escaneie o QR Code para abrir esta página
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Button
         onClick={() => navigate("/")}
         variant="outline"
         size="icon"
-        className="fixed top-4 left-4 z-50 rounded-full bg-white/90 backdrop-blur-sm"
+        className="fixed top-4 left-4 z-50 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white"
       >
         <ArrowLeft className="w-5 h-5" />
       </Button>
 
-      <div className="container mx-auto px-4 py-12 relative z-10">
-        <div className="max-w-2xl mx-auto space-y-8">
+      <div className="container mx-auto px-4 py-8 md:py-16 relative z-10">
+        <div className="max-w-6xl mx-auto space-y-12">
           {/* Hero Section */}
-          <div className="text-center animate-fade-in-up">
-            <div className="mb-6">
-              <Heart className="w-20 h-20 mx-auto text-white animate-heartbeat" />
+          <div className="text-center animate-fade-in-up space-y-6">
+            <div className="flex justify-center gap-3">
+              <Heart className="w-16 h-16 md:w-24 md:h-24 text-white fill-white animate-heartbeat" />
+              <Heart className="w-20 h-20 md:w-28 md:h-28 text-white fill-white animate-heartbeat" style={{ animationDelay: "0.2s" }} />
+              <Heart className="w-16 h-16 md:w-24 md:h-24 text-white fill-white animate-heartbeat" style={{ animationDelay: "0.4s" }} />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 text-shimmer">
-              {pageData.title}
-            </h1>
-            <p className="text-2xl md:text-3xl text-white/95 font-light">
-              Para {pageData.recipientName}
-            </p>
-          </div>
-
-          {/* Photo Gallery */}
-          <div className="relative aspect-[3/4] md:aspect-video rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
-            {pageData.photos.map((photo, idx) => (
-              <img
-                key={idx}
-                src={photo}
-                alt={`Foto ${idx + 1}`}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                  idx === currentPhotoIndex ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            ))}
-            {pageData.photos.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {pageData.photos.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      idx === currentPhotoIndex
-                        ? "bg-white w-8"
-                        : "bg-white/50"
-                    }`}
-                  />
-                ))}
+            <div className="space-y-4">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 text-shimmer leading-tight">
+                {pageData.title}
+              </h1>
+              <div className="inline-block bg-white/20 backdrop-blur-md rounded-full px-8 py-4 border-2 border-white/40">
+                <p className="text-2xl md:text-4xl text-white font-medium">
+                  Para {pageData.recipientName} ♥
+                </p>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Message */}
+          {/* Photo Carousel */}
+          <div className="animate-fade-in-up">
+            <Carousel className="w-full max-w-5xl mx-auto">
+              <CarouselContent>
+                {pageData.photos.map((photo, idx) => (
+                  <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-2">
+                      <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 hover:scale-105 transition-transform duration-300">
+                        <img
+                          src={photo}
+                          alt={`Memória especial ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {pageData.photos.length > 3 && (
+                <>
+                  <CarouselPrevious className="bg-white/90 backdrop-blur-sm hover:bg-white" />
+                  <CarouselNext className="bg-white/90 backdrop-blur-sm hover:bg-white" />
+                </>
+              )}
+            </Carousel>
+          </div>
+
+          {/* Message Section */}
           {pageData.message && (
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-xl animate-fade-in-up">
-              <p className="text-lg md:text-xl text-foreground leading-relaxed whitespace-pre-wrap text-center">
-                {pageData.message}
-              </p>
+            <div className="animate-fade-in-up">
+              <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-lg rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-white/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+                <div className="relative z-10 space-y-6">
+                  <div className="flex justify-center mb-6">
+                    <Heart className="w-12 h-12 text-primary fill-primary" />
+                  </div>
+                  <p className="text-xl md:text-2xl text-foreground leading-relaxed whitespace-pre-wrap text-center font-light">
+                    {pageData.message}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Final Hearts */}
-          <div className="flex justify-center gap-4 animate-fade-in-up">
-            <Heart className="w-12 h-12 text-white fill-white animate-heartbeat" />
-            <Heart className="w-12 h-12 text-white fill-white animate-heartbeat" style={{ animationDelay: "0.2s" }} />
-            <Heart className="w-12 h-12 text-white fill-white animate-heartbeat" style={{ animationDelay: "0.4s" }} />
+          {/* Decorative Hearts Grid */}
+          <div className="grid grid-cols-5 gap-4 max-w-md mx-auto animate-fade-in-up">
+            {[...Array(5)].map((_, i) => (
+              <Heart 
+                key={i}
+                className="w-full text-white fill-white animate-heartbeat opacity-80" 
+                style={{ animationDelay: `${i * 0.15}s` }} 
+              />
+            ))}
+          </div>
+
+          {/* Final Section with Date */}
+          <div className="text-center animate-fade-in-up space-y-6 pb-8">
+            <div className="flex justify-center gap-6">
+              <Heart className="w-16 h-16 text-white fill-white animate-heartbeat" />
+              <Heart className="w-16 h-16 text-white fill-white animate-heartbeat" style={{ animationDelay: "0.2s" }} />
+              <Heart className="w-16 h-16 text-white fill-white animate-heartbeat" style={{ animationDelay: "0.4s" }} />
+            </div>
+            <div className="inline-block bg-white/20 backdrop-blur-md rounded-full px-6 py-3 border border-white/30">
+              <p className="text-white/90 text-sm">
+                Criado com amor em {new Date(pageData.createdAt).toLocaleDateString('pt-BR')}
+              </p>
+            </div>
           </div>
         </div>
       </div>
