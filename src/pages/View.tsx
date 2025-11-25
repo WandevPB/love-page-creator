@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Heart, Music, ArrowLeft, QrCode, Share2 } from "lucide-react";
+import { Heart, Music, ArrowLeft, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
 import FloatingHearts from "@/components/FloatingHearts";
+import Autoplay from "embla-carousel-autoplay";
 import {
   Carousel,
   CarouselContent,
@@ -26,9 +27,12 @@ const View = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [pageData, setPageData] = useState<PageData | null>(null);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 3000, stopOnInteraction: false })
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(`romantic-page-${id}`);
@@ -38,11 +42,13 @@ const View = () => {
   }, [id]);
 
   useEffect(() => {
-    if (pageData?.photos && pageData.photos.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentPhotoIndex((prev) => (prev + 1) % pageData.photos.length);
-      }, 4000);
-      return () => clearInterval(interval);
+    if (pageData?.music && audioRef.current) {
+      audioRef.current.play().then(() => {
+        setIsMusicPlaying(true);
+      }).catch(() => {
+        // Autoplay bloqueado pelo navegador
+        setIsMusicPlaying(false);
+      });
     }
   }, [pageData]);
 
@@ -143,7 +149,14 @@ const View = () => {
 
           {/* Photo Carousel */}
           <div className="animate-fade-in-up">
-            <Carousel className="w-full max-w-5xl mx-auto">
+            <Carousel 
+              className="w-full max-w-5xl mx-auto"
+              plugins={[autoplayPlugin.current]}
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+            >
               <CarouselContent>
                 {pageData.photos.map((photo, idx) => (
                   <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
