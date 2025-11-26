@@ -47,6 +47,7 @@ const Create = () => {
       const fileName = `${Date.now()}-${photo.name}`;
       const { data, error } = await supabase.storage.from('photos').upload(fileName, photo, { upsert: true });
       if (error) {
+        console.error('Erro Supabase:', error); // Log detalhado
         toast({ title: "Erro ao enviar foto", description: error.message, variant: "destructive" });
         continue;
       }
