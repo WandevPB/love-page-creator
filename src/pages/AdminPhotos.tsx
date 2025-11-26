@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabaseClient";
+
 
 const AdminPhotos = () => {
   const [pages, setPages] = useState<any[]>([]);
@@ -14,10 +14,15 @@ const AdminPhotos = () => {
       navigate("/admin999");
       return;
     }
-    // Buscar todas as páginas do Supabase
+    // Buscar todas as páginas do backend Express/Prisma
     const fetchPages = async () => {
-      const { data } = await supabase.from('pages').select('*').order('created_at', { ascending: false });
-      setPages(data || []);
+      try {
+        const res = await fetch("/api/pages");
+        const data = await res.json();
+        setPages(data || []);
+      } catch (err) {
+        setPages([]);
+      }
     };
     fetchPages();
   }, [navigate]);
