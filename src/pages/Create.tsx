@@ -45,7 +45,15 @@ const Create = () => {
 
     // 1. Obter upload URL/token do backend
     const b2Res = await fetch("https://love-page-creator.vercel.app/api/b2-upload-url");
-    const b2Data = await b2Res.json();
+    let b2Data;
+    try {
+      b2Data = await b2Res.json();
+    } catch (err) {
+      const text = await b2Res.text();
+      console.error("Resposta inesperada do backend:", text);
+      toast({ title: "Erro ao obter upload URL do B2", description: "Resposta inválida do backend", variant: "destructive" });
+      return;
+    }
     if (!b2Res.ok || !b2Data.uploadUrl || !b2Data.authorizationToken) {
       toast({ title: "Erro ao obter upload URL do B2", description: b2Data.error || "Erro desconhecido", variant: "destructive" });
       return;
