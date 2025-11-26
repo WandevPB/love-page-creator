@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+// import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,48 +41,38 @@ const Create = () => {
       return;
     }
 
-    // Upload das fotos para Supabase Storage
-    const photoUrls: string[] = [];
-    for (const photo of formData.photos) {
-      const fileName = `${Date.now()}-${photo.name}`;
-      const { data, error } = await supabase.storage.from('photos').upload(fileName, photo, { upsert: true });
-      if (error) {
-        console.error('Erro Supabase:', error); // Log detalhado
-        toast({ title: "Erro ao enviar foto", description: error.message, variant: "destructive" });
-        continue;
-      }
-      const publicUrl = supabase.storage.from('photos').getPublicUrl(fileName).publicUrl;
-      photoUrls.push(publicUrl);
-    }
 
-    // Upload da música (opcional)
-    let musicUrl: string | null = null;
+    // Enviar dados e arquivos para backend Express/Prisma
+    const form = new FormData();
+    form.append("recipientName", formData.recipientName);
+    form.append("title", formData.title);
+    form.append("message", formData.message);
+    formData.photos.forEach((photo, idx) => {
+      form.append(`photos`, photo);
+    });
     if (formData.musicFile) {
-      const musicName = `${Date.now()}-${formData.musicFile.name}`;
-      const { data, error } = await supabase.storage.from('music').upload(musicName, formData.musicFile, { upsert: true });
-      if (!error) {
-        musicUrl = supabase.storage.from('music').getPublicUrl(musicName).publicUrl;
-      }
+      form.append("music", formData.musicFile);
     }
 
-    // Salvar página no banco
-    const { data, error } = await supabase.from('pages').insert([
-      {
-        recipient_name: formData.recipientName,
-        title: formData.title,
-        message: formData.message,
-        photos: photoUrls,
-        music: musicUrl,
-        created_at: new Date().toISOString(),
+    try {
+      const res = await fetch("/api/pages", {
+        method: "POST",
+        body: form,
+      });
+      const result = await res.json();
+      if (!res.ok || !result.id) {
+        toast({ title: "Erro ao salvar página", description: result.error || "Erro desconhecido", variant: "destructive" });
+        return;
       }
-    ]).select();
-
-    if (error || !data || !data[0]) {
-      toast({ title: "Erro ao salvar página", description: error?.message || "Erro desconhecido", variant: "destructive" });
-      return;
+      const pageId = result.id;
+      toast({
+        title: "Página criada! 💝",
+        description: "Sua página romântica está pronta!",
+      });
+      navigate(`/view/${pageId}`);
+    } catch (err) {
+      toast({ title: "Erro ao salvar página", description: String(err), variant: "destructive" });
     }
-
-    const pageId = data[0].id;
 
     toast({
       title: "Página criada! 💝",
