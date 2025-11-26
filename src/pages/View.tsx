@@ -38,7 +38,7 @@ const View = () => {
   useEffect(() => {
     const fetchPage = async () => {
       try {
-        const res = await fetch(`/api/pages/${id}`);
+        const res = await fetch(`https://love-page-creator.vercel.app/api/pages/${id}`);
         if (!res.ok) {
           setPageData(null);
           return;

@@ -55,7 +55,7 @@ const Create = () => {
     }
 
     try {
-      const res = await fetch("/api/pages", {
+      const res = await fetch("https://love-page-creator.vercel.app/api/pages", {
         method: "POST",
         body: form,
       });

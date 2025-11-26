@@ -17,7 +17,7 @@ const AdminPhotos = () => {
     // Buscar todas as páginas do backend Express/Prisma
     const fetchPages = async () => {
       try {
-        const res = await fetch("/api/pages");
+        const res = await fetch("https://love-page-creator.vercel.app/api/pages");
         const data = await res.json();
         setPages(data || []);
       } catch (err) {
