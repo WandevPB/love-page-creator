@@ -74,7 +74,7 @@ const View = () => {
     );
   }
 
-  const currentUrl = window.location.href;
+  const currentUrl = `https://love-page-creator.vercel.app/view/${id}`;
 
   return (
     <div className="min-h-screen romantic-gradient relative overflow-hidden">
