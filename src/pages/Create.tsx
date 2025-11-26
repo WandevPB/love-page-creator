@@ -45,7 +45,7 @@ const Create = () => {
     const photoUrls: string[] = [];
     for (const photo of formData.photos) {
       const fileName = `${Date.now()}-${photo.name}`;
-      const { data, error } = await supabase.storage.from('photos').upload(fileName, photo);
+      const { data, error } = await supabase.storage.from('photos').upload(fileName, photo, { upsert: true });
       if (error) {
         toast({ title: "Erro ao enviar foto", description: error.message, variant: "destructive" });
         continue;
@@ -58,7 +58,7 @@ const Create = () => {
     let musicUrl: string | null = null;
     if (formData.musicFile) {
       const musicName = `${Date.now()}-${formData.musicFile.name}`;
-      const { data, error } = await supabase.storage.from('music').upload(musicName, formData.musicFile);
+      const { data, error } = await supabase.storage.from('music').upload(musicName, formData.musicFile, { upsert: true });
       if (!error) {
         musicUrl = supabase.storage.from('music').getPublicUrl(musicName).publicUrl;
       }
