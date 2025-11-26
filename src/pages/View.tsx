@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Music, ArrowLeft, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,10 +36,11 @@ const View = () => {
   );
 
   useEffect(() => {
-    const stored = localStorage.getItem(`romantic-page-${id}`);
-    if (stored) {
-      setPageData(JSON.parse(stored));
-    }
+    const fetchPage = async () => {
+      const { data, error } = await supabase.from('pages').select('*').eq('id', id).single();
+      if (data) setPageData(data);
+    };
+    fetchPage();
   }, [id]);
 
   useEffect(() => {

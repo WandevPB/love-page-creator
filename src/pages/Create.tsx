@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +30,8 @@ const Create = () => {
     setFormData({ ...formData, musicFile: file });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.recipientName || !formData.title || formData.photos.length === 0) {
       toast({
         title: "Campos obrigatórios",
@@ -41,21 +41,47 @@ const Create = () => {
       return;
     }
 
-    // Store in localStorage for demo
-    const photoUrls = formData.photos.map(photo => URL.createObjectURL(photo));
-    const musicUrl = formData.musicFile ? URL.createObjectURL(formData.musicFile) : null;
-    
-    const pageData = {
-      recipientName: formData.recipientName,
-      title: formData.title,
-      message: formData.message,
-      photos: photoUrls,
-      music: musicUrl,
-      createdAt: new Date().toISOString(),
-    };
+    // Upload das fotos para Supabase Storage
+    const photoUrls: string[] = [];
+    for (const photo of formData.photos) {
+      const fileName = `${Date.now()}-${photo.name}`;
+      const { data, error } = await supabase.storage.from('photos').upload(fileName, photo);
+      if (error) {
+        toast({ title: "Erro ao enviar foto", description: error.message, variant: "destructive" });
+        continue;
+      }
+      const publicUrl = supabase.storage.from('photos').getPublicUrl(fileName).publicUrl;
+      photoUrls.push(publicUrl);
+    }
 
-    const pageId = Date.now().toString();
-    localStorage.setItem(`romantic-page-${pageId}`, JSON.stringify(pageData));
+    // Upload da música (opcional)
+    let musicUrl: string | null = null;
+    if (formData.musicFile) {
+      const musicName = `${Date.now()}-${formData.musicFile.name}`;
+      const { data, error } = await supabase.storage.from('music').upload(musicName, formData.musicFile);
+      if (!error) {
+        musicUrl = supabase.storage.from('music').getPublicUrl(musicName).publicUrl;
+      }
+    }
+
+    // Salvar página no banco
+    const { data, error } = await supabase.from('pages').insert([
+      {
+        recipient_name: formData.recipientName,
+        title: formData.title,
+        message: formData.message,
+        photos: photoUrls,
+        music: musicUrl,
+        created_at: new Date().toISOString(),
+      }
+    ]).select();
+
+    if (error || !data || !data[0]) {
+      toast({ title: "Erro ao salvar página", description: error?.message || "Erro desconhecido", variant: "destructive" });
+      return;
+    }
+
+    const pageId = data[0].id;
 
     toast({
       title: "Página criada! 💝",
