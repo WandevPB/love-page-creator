@@ -42,42 +42,73 @@ const Create = () => {
     }
 
 
-    // Enviar dados e arquivos para backend Express/Prisma
-    const form = new FormData();
-    form.append("recipientName", formData.recipientName);
-    form.append("title", formData.title);
-    form.append("message", formData.message);
-    formData.photos.forEach((photo, idx) => {
-      form.append(`photos`, photo);
-    });
-    if (formData.musicFile) {
-      form.append("music", formData.musicFile);
+
+    // 1. Obter upload URL/token do backend
+    const b2Res = await fetch("https://love-page-creator.vercel.app/api/b2-upload-url");
+    const b2Data = await b2Res.json();
+    if (!b2Res.ok || !b2Data.uploadUrl || !b2Data.authorizationToken) {
+      toast({ title: "Erro ao obter upload URL do B2", description: b2Data.error || "Erro desconhecido", variant: "destructive" });
+      return;
     }
 
-    try {
-      const res = await fetch("https://love-page-creator.vercel.app/api/pages", {
+    // 2. Upload das fotos para B2
+    const photoUrls = await Promise.all(formData.photos.map(async (photo) => {
+      const b2Form = new FormData();
+      b2Form.append("file", photo);
+      b2Form.append("bucketName", b2Data.bucketName);
+      b2Form.append("key", `photos/${Date.now()}_${photo.name}`);
+      const uploadRes = await fetch(b2Data.uploadUrl, {
         method: "POST",
-        body: form,
+        headers: {
+          Authorization: b2Data.authorizationToken,
+        },
+        body: b2Form,
       });
-      const result = await res.json();
-      if (!res.ok || !result.id) {
-        toast({ title: "Erro ao salvar página", description: result.error || "Erro desconhecido", variant: "destructive" });
-        return;
+      if (!uploadRes.ok) return null;
+      return `https://f000.backblazeb2.com/file/${b2Data.bucketName}/photos/${Date.now()}_${photo.name}`;
+    }));
+
+    // 3. Upload da música para B2
+    let musicUrl = null;
+    if (formData.musicFile) {
+      const b2Form = new FormData();
+      b2Form.append("file", formData.musicFile);
+      b2Form.append("bucketName", b2Data.bucketName);
+      b2Form.append("key", `music/${Date.now()}_${formData.musicFile.name}`);
+      const uploadRes = await fetch(b2Data.uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: b2Data.authorizationToken,
+        },
+        body: b2Form,
+      });
+      if (uploadRes.ok) {
+        musicUrl = `https://f000.backblazeb2.com/file/${b2Data.bucketName}/music/${Date.now()}_${formData.musicFile.name}`;
       }
-      const pageId = result.id;
-      toast({
-        title: "Página criada! 💝",
-        description: "Sua página romântica está pronta!",
-      });
-      navigate(`/view/${pageId}`);
-    } catch (err) {
-      toast({ title: "Erro ao salvar página", description: String(err), variant: "destructive" });
     }
 
+    // 4. Enviar dados da página para o backend (sem arquivos)
+    const pageRes = await fetch("https://love-page-creator.vercel.app/api/pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipientName: formData.recipientName,
+        title: formData.title,
+        message: formData.message,
+        photos: photoUrls.filter(Boolean),
+        music: musicUrl,
+      }),
+    });
+    const result = await pageRes.json();
+    if (!pageRes.ok || !result.id) {
+      toast({ title: "Erro ao salvar página", description: result.error || "Erro desconhecido", variant: "destructive" });
+      return;
+    }
     toast({
       title: "Página criada! 💝",
       description: "Sua página romântica está pronta!",
     });
+    navigate(`/view/${result.id}`);
 
     navigate(`/view/${pageId}`);
   };

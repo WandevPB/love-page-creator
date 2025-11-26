@@ -1,3 +1,18 @@
+// Endpoint para fornecer upload URL/token do B2 ao frontend
+app.get('/api/b2-upload-url', async (req, res) => {
+  try {
+    await b2.authorize();
+    const bucketId = process.env.B2_BUCKET_ID;
+    const uploadUrlResp = await b2.getUploadUrl({ bucketId });
+    res.json({
+      uploadUrl: uploadUrlResp.data.uploadUrl,
+      authorizationToken: uploadUrlResp.data.authorizationToken,
+      bucketName: process.env.B2_BUCKET_NAME,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
