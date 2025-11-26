@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "@/lib/supabaseClient";
+// importação removida: supabase
 import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Music, ArrowLeft, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,17 @@ const View = () => {
 
   useEffect(() => {
     const fetchPage = async () => {
-      const { data, error } = await supabase.from('pages').select('*').eq('id', id).single();
-      if (data) setPageData(data);
+      try {
+        const res = await fetch(`/api/pages/${id}`);
+        if (!res.ok) {
+          setPageData(null);
+          return;
+        }
+        const data = await res.json();
+        setPageData(data);
+      } catch (err) {
+        setPageData(null);
+      }
     };
     fetchPage();
   }, [id]);
