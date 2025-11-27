@@ -59,16 +59,17 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
       photos: photoUrls,
       music: musicUrl || null,
     });
+    // Salvar photos como string JSON
     const page = await prisma.page.create({
       data: {
         title: title || '',
         content: message || '',
-        photos: photoUrls,
+        photos: JSON.stringify(photoUrls),
         music: musicUrl || null,
       },
     });
-    // Retornar recipientName junto com os dados
-    res.json({ id: page.id, recipientName, title: page.title, message: page.content, photos: page.photos, music: page.music, createdAt: page.createdAt });
+    // Retornar recipientName junto com os dados, photos como array
+    res.json({ id: page.id, recipientName, title: page.title, message: page.content, photos: JSON.parse(page.photos || '[]'), music: page.music, createdAt: page.createdAt });
   } catch (err) {
     console.error('Erro ao criar página:', err);
     res.status(500).json({ error: err.message });
@@ -79,13 +80,13 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
 app.get('/api/pages', async (req, res) => {
   try {
     const pages = await prisma.page.findMany();
-    // Adiciona recipientName vazio para compatibilidade
+    // Adiciona recipientName vazio para compatibilidade, photos como array
     const result = pages.map(page => ({
       id: page.id,
       recipientName: '',
       title: page.title,
       message: page.content,
-      photos: page.photos,
+      photos: JSON.parse(page.photos || '[]'),
       music: page.music,
       createdAt: page.createdAt
     }));
@@ -103,13 +104,13 @@ app.get('/api/pages/:id', async (req, res) => {
       where: { id: req.params.id },
     });
     if (!page) return res.status(404).json({ error: 'Página não encontrada' });
-    // Adiciona recipientName vazio para compatibilidade
+    // Adiciona recipientName vazio para compatibilidade, photos como array
     res.json({
       id: page.id,
       recipientName: '',
       title: page.title,
       message: page.content,
-      photos: page.photos,
+      photos: JSON.parse(page.photos || '[]'),
       music: page.music,
       createdAt: page.createdAt
     });

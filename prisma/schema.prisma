@@ -6,7 +6,7 @@
 
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 generator client {
@@ -17,7 +17,7 @@ model Page {
   id        String   @id @default(uuid())
   title     String
   content   String?
-  photos    String[]
+  photos    String   // JSON string com array de URLs
   music     String?
   createdAt DateTime @default(now())
 }

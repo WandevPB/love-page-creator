@@ -10,7 +10,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    provider: "postgresql",
-    url: env("DATABASE_URL"),
+    provider: "sqlite",
+    url: "file:./dev.db",
   },
 });
