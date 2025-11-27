@@ -1,18 +1,3 @@
-// Endpoint para fornecer upload URL/token do B2 ao frontend
-app.get('/api/b2-upload-url', async (req, res) => {
-  try {
-    await b2.authorize();
-    const bucketId = process.env.B2_BUCKET_ID;
-    const uploadUrlResp = await b2.getUploadUrl({ bucketId });
-    res.json({
-      uploadUrl: uploadUrlResp.data.uploadUrl,
-      authorizationToken: uploadUrlResp.data.authorizationToken,
-      bucketName: process.env.B2_BUCKET_NAME,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -30,6 +15,22 @@ const b2 = new B2({
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+// Endpoint para fornecer upload URL/token do B2 ao frontend
+app.get('/api/b2-upload-url', async (req, res) => {
+  try {
+    await b2.authorize();
+    const bucketId = process.env.B2_BUCKET_ID;
+    const uploadUrlResp = await b2.getUploadUrl({ bucketId });
+    res.json({
+      uploadUrl: uploadUrlResp.data.uploadUrl,
+      authorizationToken: uploadUrlResp.data.authorizationToken,
+      bucketName: process.env.B2_BUCKET_NAME,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Helper para upload no B2
 async function uploadToB2(file, folder = 'photos') {
@@ -106,25 +107,5 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
-// (REMOVIDO: imports e redeclaração de storage/upload duplicados)
 
-// POST /api/pages - cria uma nova página
-app.post('/api/pages', upload.any(), async (req, res) => {
-  try {
-    const { recipientName, title, message } = req.body;
-    const photos = req.files.filter(f => f.fieldname === 'photos').map(file => {
-      // Simulação: salva como base64 (ideal: salvar em storage/cloud)
-      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-    });
-    let music = null;
-    const musicFile = req.files.find(f => f.fieldname === 'music');
-    if (musicFile) {
-      music = `data:${musicFile.mimetype};base64,${musicFile.buffer.toString('base64')}`;
-    }
-    // Aqui você pode persistir no banco, etc.
-    res.json({ recipientName, title, message, photos, music });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 // (REMOVIDO: bloco duplicado de rotas e listen)
