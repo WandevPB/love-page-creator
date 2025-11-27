@@ -28,21 +28,17 @@ const upload = multer({ storage });
 // Servir arquivos estáticos da pasta uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
 app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCount: 1 }]), async (req, res) => {
-      console.log('Dados enviados ao Prisma:', {
-        title: title || '',
-        content: message || '',
-        photos: photoUrls,
-        music: musicUrl || null,
-      });
   try {
-    console.log('req.files:', req.files);
-    console.log('req.body:', req.body);
+    // Extração robusta dos campos
     let title = '';
     let message = '';
+    let recipientName = '';
     if (req.body) {
       if (typeof req.body.title === 'string') title = req.body.title;
       if (typeof req.body.message === 'string') message = req.body.message;
+      if (typeof req.body.recipientName === 'string') recipientName = req.body.recipientName;
     }
     const photoFiles = Array.isArray(req.files && req.files['photos']) ? req.files['photos'] : [];
     const musicFile = req.files && req.files['music'] ? req.files['music'][0] : null;
@@ -51,6 +47,16 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
     if (musicFile) {
       musicUrl = `${req.protocol}://${req.get('host')}/uploads/music/${musicFile.filename}`;
     }
+    // Log após definição das variáveis
+    console.log('req.files:', req.files);
+    console.log('req.body:', req.body);
+    console.log('Dados enviados ao Prisma:', {
+      recipientName: recipientName || '',
+      title: title || '',
+      content: message || '',
+      photos: photoUrls,
+      music: musicUrl || null,
+    });
     const prisma = new PrismaClient();
     const page = await prisma.page.create({
       data: {
@@ -60,31 +66,56 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
         music: musicUrl || null,
       },
     });
-    res.json({ id: page.id });
+    // Retornar recipientName junto com os dados
+    res.json({ id: page.id, recipientName, title: page.title, message: page.content, photos: page.photos, music: page.music, createdAt: page.createdAt });
   } catch (err) {
+    console.error('Erro ao criar página:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.get('/api/pages', async (req, res) => {
   try {
     const prisma = new PrismaClient();
     const pages = await prisma.page.findMany();
-    res.json(pages);
+    // Adiciona recipientName vazio para compatibilidade
+    const result = pages.map(page => ({
+      id: page.id,
+      recipientName: '',
+      title: page.title,
+      message: page.content,
+      photos: page.photos,
+      music: page.music,
+      createdAt: page.createdAt
+    }));
+    res.json(result);
   } catch (err) {
+    console.error('Erro ao listar páginas:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.get('/api/pages/:id', async (req, res) => {
   try {
     const prisma = new PrismaClient();
     const page = await prisma.page.findUnique({
-      where: { id: Number(req.params.id) },
+      where: { id: req.params.id },
     });
     if (!page) return res.status(404).json({ error: 'Página não encontrada' });
-    res.json(page);
+    // Adiciona recipientName vazio para compatibilidade
+    res.json({
+      id: page.id,
+      recipientName: '',
+      title: page.title,
+      message: page.content,
+      photos: page.photos,
+      music: page.music,
+      createdAt: page.createdAt
+    });
   } catch (err) {
+    console.error('Erro ao buscar página:', err);
     res.status(500).json({ error: err.message });
   }
 });
