@@ -43,66 +43,12 @@ const Create = () => {
 
 
 
-    // 1. Obter upload URL/token do backend
-    // const b2Res = await fetch("/api/b2-upload-url");
-    // Remover integração B2
-    let b2Data;
-    let rawText = await b2Res.text();
-    try {
-      b2Data = JSON.parse(rawText);
-    } catch (err) {
-      console.error("Resposta inesperada do backend:", rawText);
-      toast({ title: "Erro ao obter upload URL do B2", description: "Resposta inválida do backend", variant: "destructive" });
-      return;
-    }
-    if (!b2Res.ok || !b2Data.uploadUrl || !b2Data.authorizationToken) {
-      toast({ title: "Erro ao obter upload URL do B2", description: b2Data.error || "Erro desconhecido", variant: "destructive" });
-      return;
-    }
-
-    // 2. Upload das fotos para B2
-    const photoUrls = await Promise.all(formData.photos.map(async (photo) => {
-      const b2Form = new FormData();
-      b2Form.append("file", photo);
-      b2Form.append("bucketName", b2Data.bucketName);
-      b2Form.append("key", `photos/${Date.now()}_${photo.name}`);
-      const uploadRes = await fetch(b2Data.uploadUrl, {
-        method: "POST",
-        headers: {
-          Authorization: b2Data.authorizationToken,
-        },
-        body: b2Form,
-      });
-      if (!uploadRes.ok) return null;
-      return `https://f000.backblazeb2.com/file/${b2Data.bucketName}/photos/${Date.now()}_${photo.name}`;
-    }));
-
-    // 3. Upload da música para B2
-    let musicUrl = null;
-    if (formData.musicFile) {
-      const b2Form = new FormData();
-      b2Form.append("file", formData.musicFile);
-      b2Form.append("bucketName", b2Data.bucketName);
-      b2Form.append("key", `music/${Date.now()}_${formData.musicFile.name}`);
-      const uploadRes = await fetch(b2Data.uploadUrl, {
-        method: "POST",
-        headers: {
-          Authorization: b2Data.authorizationToken,
-        },
-        body: b2Form,
-      });
-      if (uploadRes.ok) {
-        musicUrl = `https://f000.backblazeb2.com/file/${b2Data.bucketName}/music/${Date.now()}_${formData.musicFile.name}`;
-      }
-    }
-
-    // 4. Enviar dados da página para o backend (sem arquivos)
     // Envio de arquivos deve ser feito como multipart/form-data
     const form = new FormData();
     form.append("recipientName", formData.recipientName);
     form.append("title", formData.title);
     form.append("message", formData.message);
-    formData.photos.forEach((photo, idx) => {
+    formData.photos.forEach((photo) => {
       form.append("photos", photo);
     });
     if (formData.musicFile) {
@@ -111,16 +57,6 @@ const Create = () => {
     const pageRes = await fetch("http://54.207.26.26:3001/api/pages", {
       method: "POST",
       body: form,
-    });
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        recipientName: formData.recipientName,
-        title: formData.title,
-        message: formData.message,
-        photos: photoUrls.filter(Boolean),
-        music: musicUrl,
-      }),
     });
     const result = await pageRes.json();
     if (!pageRes.ok || !result.id) {
