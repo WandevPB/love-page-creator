@@ -3,61 +3,42 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { PrismaClient } = require('@prisma/client');
-const B2 = require('backblaze-b2');
+
+const path = require('path');
+const fs = require('fs');
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const b2 = new B2({
-  applicationKeyId: process.env.B2_KEY_ID,
-  applicationKey: process.env.B2_KEY_NAME,
-});
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-// Endpoint para fornecer upload URL/token do B2 ao frontend
-app.get('/api/b2-upload-url', async (req, res) => {
-  try {
-    await b2.authorize();
-    const bucketId = process.env.B2_BUCKET_ID;
-    const uploadUrlResp = await b2.getUploadUrl({ bucketId });
-    res.json({
-      uploadUrl: uploadUrlResp.data.uploadUrl,
-      authorizationToken: uploadUrlResp.data.authorizationToken,
-      bucketName: process.env.B2_BUCKET_NAME,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+// Configura Multer para salvar arquivos localmente
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    let folder = 'photos';
+    if (file.fieldname === 'music') folder = 'music';
+    const uploadPath = path.join(__dirname, 'uploads', folder);
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}_${file.originalname}`);
   }
 });
+const upload = multer({ storage });
 
-// Helper para upload no B2
-async function uploadToB2(file, folder = 'photos') {
-  await b2.authorize();
-  const bucketId = process.env.B2_BUCKET_ID;
-  const fileName = `${folder}/${Date.now()}_${file.originalname}`;
-  const uploadUrlResp = await b2.getUploadUrl({ bucketId });
-  await b2.uploadFile({
-    uploadUrl: uploadUrlResp.data.uploadUrl,
-    uploadAuthToken: uploadUrlResp.data.authorizationToken,
-    filename: fileName,
-    data: file.buffer,
-    contentType: file.mimetype,
-  });
-  return `https://f000.backblazeb2.com/file/${process.env.B2_BUCKET_NAME}/${fileName}`;
-}
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCount: 1 }]), async (req, res) => {
   try {
     const { recipientName, title, message } = req.body;
     const photoFiles = req.files['photos'] || [];
     const musicFile = req.files['music'] ? req.files['music'][0] : null;
-    const photoUrls = await Promise.all(photoFiles.map(file => uploadToB2(file, 'photos')));
-    let musicUrl = null;
-    if (musicFile) {
-      musicUrl = await uploadToB2(musicFile, 'music');
-    }
+        // URLs locais para os arquivos
+        const photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/photos/${file.filename}`);
+        let musicUrl = null;
+        if (musicFile) {
+          musicUrl = `${req.protocol}://${req.get('host')}/uploads/music/${musicFile.filename}`;
+        }
     const prisma = new PrismaClient();
     const page = await prisma.page.create({
       data: {
