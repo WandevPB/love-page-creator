@@ -30,15 +30,17 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCount: 1 }]), async (req, res) => {
   try {
+    console.log('req.files:', req.files);
+    console.log('req.body:', req.body);
     const { recipientName, title, message } = req.body;
-    const photoFiles = req.files['photos'] || [];
-    const musicFile = req.files['music'] ? req.files['music'][0] : null;
-        // URLs locais para os arquivos
-        const photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/photos/${file.filename}`);
-        let musicUrl = null;
-        if (musicFile) {
-          musicUrl = `${req.protocol}://${req.get('host')}/uploads/music/${musicFile.filename}`;
-        }
+    const photoFiles = req.files && req.files['photos'] ? req.files['photos'] : [];
+    const musicFile = req.files && req.files['music'] ? req.files['music'][0] : null;
+    // URLs locais para os arquivos
+    const photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/photos/${file.filename}`);
+    let musicUrl = null;
+    if (musicFile) {
+      musicUrl = `${req.protocol}://${req.get('host')}/uploads/music/${musicFile.filename}`;
+    }
     const prisma = new PrismaClient();
     const page = await prisma.page.create({
       data: {
