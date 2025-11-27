@@ -38,7 +38,7 @@ const View = () => {
   useEffect(() => {
     const fetchPage = async () => {
       try {
-        const res = await fetch(`https://love-page-creator.vercel.app/api/pages/${id}`);
+        const res = await fetch(`http://54.207.26.26:3001/api/pages/${id}`);
         if (!res.ok) {
           setPageData(null);
           return;
@@ -85,7 +85,7 @@ const View = () => {
     );
   }
 
-  const currentUrl = `https://love-page-creator.vercel.app/view/${id}`;
+  const currentUrl = `${window.location.origin}/view/${id}`;
 
   return (
     <div className="min-h-screen romantic-gradient relative overflow-hidden">

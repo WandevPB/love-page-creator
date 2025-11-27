@@ -44,7 +44,8 @@ const Create = () => {
 
 
     // 1. Obter upload URL/token do backend
-    const b2Res = await fetch("https://love-page-creator.vercel.app/api/b2-upload-url");
+    // const b2Res = await fetch("/api/b2-upload-url");
+    // Remover integração B2
     let b2Data;
     let rawText = await b2Res.text();
     try {
@@ -96,7 +97,21 @@ const Create = () => {
     }
 
     // 4. Enviar dados da página para o backend (sem arquivos)
-    const pageRes = await fetch("https://love-page-creator.vercel.app/api/pages", {
+    // Envio de arquivos deve ser feito como multipart/form-data
+    const form = new FormData();
+    form.append("recipientName", formData.recipientName);
+    form.append("title", formData.title);
+    form.append("message", formData.message);
+    formData.photos.forEach((photo, idx) => {
+      form.append("photos", photo);
+    });
+    if (formData.musicFile) {
+      form.append("music", formData.musicFile);
+    }
+    const pageRes = await fetch("http://54.207.26.26:3001/api/pages", {
+      method: "POST",
+      body: form,
+    });
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -117,8 +132,6 @@ const Create = () => {
       description: "Sua página romântica está pronta!",
     });
     navigate(`/view/${result.id}`);
-
-    navigate(`/view/${pageId}`);
   };
 
   return (
