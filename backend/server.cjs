@@ -3,8 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+// Removido Prisma, usaremos arquivo JSON local
 
 const path = require('path');
 const fs = require('fs');
@@ -31,9 +30,8 @@ const upload = multer({ storage });
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
-app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCount: 1 }]), async (req, res) => {
+app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCount: 1 }]), (req, res) => {
   try {
-    // Extração robusta dos campos
     let title = '';
     let message = '';
     let recipientName = '';
@@ -49,27 +47,30 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
     if (musicFile) {
       musicUrl = `${req.protocol}://${req.get('host')}/uploads/music/${musicFile.filename}`;
     }
-    // Log após definição das variáveis
-    console.log('req.files:', req.files);
-    console.log('req.body:', req.body);
-    console.log('Dados enviados ao Prisma:', {
-      recipientName: recipientName || '',
-      title: title || '',
-      content: message || '',
+    // Carregar páginas existentes
+    const pagesPath = path.join(__dirname, 'uploads', 'pages.json');
+    let pages = [];
+    if (fs.existsSync(pagesPath)) {
+      try {
+        pages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
+      } catch (e) { pages = []; }
+    }
+    // Gerar novo id
+    const newId = pages.length > 0 ? pages[pages.length - 1].id + 1 : 1;
+    const createdAt = new Date().toISOString();
+    const page = {
+      id: newId,
+      recipientName,
+      title,
+      message,
       photos: photoUrls,
-      music: musicUrl || null,
-    });
-    // Salvar photos como string JSON
-    const page = await prisma.page.create({
-      data: {
-        title: title || '',
-        content: message || '',
-        photos: JSON.stringify(photoUrls),
-        music: musicUrl || null,
-      },
-    });
-    // Retornar recipientName junto com os dados, photos como array
-    res.json({ id: page.id, recipientName, title: page.title, message: page.content, photos: JSON.parse(page.photos || '[]'), music: page.music, createdAt: page.createdAt });
+      music: musicUrl,
+      createdAt,
+      link: `/view/${newId}`
+    };
+    pages.push(page);
+    fs.writeFileSync(pagesPath, JSON.stringify(pages, null, 2));
+    res.json(page);
   } catch (err) {
     console.error('Erro ao criar página:', err);
     res.status(500).json({ error: err.message });
@@ -77,45 +78,32 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
 });
 
 
-app.get('/api/pages', async (req, res) => {
+// Rota para listar todas as páginas para o admin
+app.get('/api/admin/pages', (req, res) => {
   try {
-    const pages = await prisma.page.findMany();
-    // Adiciona recipientName vazio para compatibilidade, photos como array
-    const result = pages.map(page => ({
-      id: page.id,
-      recipientName: '',
-      title: page.title,
-      message: page.content,
-      photos: JSON.parse(page.photos || '[]'),
-      music: page.music,
-      createdAt: page.createdAt
-    }));
-    res.json(result);
+    const pagesPath = path.join(__dirname, 'uploads', 'pages.json');
+    let pages = [];
+    if (fs.existsSync(pagesPath)) {
+      pages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
+    }
+    res.json(pages);
   } catch (err) {
-    console.error('Erro ao listar páginas:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 
-app.get('/api/pages/:id', async (req, res) => {
+app.get('/api/pages/:id', (req, res) => {
   try {
-    const page = await prisma.page.findUnique({
-      where: { id: req.params.id },
-    });
+    const pagesPath = path.join(__dirname, 'uploads', 'pages.json');
+    let pages = [];
+    if (fs.existsSync(pagesPath)) {
+      pages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
+    }
+    const page = pages.find(p => p.id == req.params.id);
     if (!page) return res.status(404).json({ error: 'Página não encontrada' });
-    // Adiciona recipientName vazio para compatibilidade, photos como array
-    res.json({
-      id: page.id,
-      recipientName: '',
-      title: page.title,
-      message: page.content,
-      photos: JSON.parse(page.photos || '[]'),
-      music: page.music,
-      createdAt: page.createdAt
-    });
+    res.json(page);
   } catch (err) {
-    console.error('Erro ao buscar página:', err);
     res.status(500).json({ error: err.message });
   }
 });
