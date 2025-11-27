@@ -38,7 +38,7 @@ const View = () => {
   useEffect(() => {
     const fetchPage = async () => {
       try {
-        const res = await fetch(`http://54.207.26.26:3001/api/pages/${id}`);
+        const res = await fetch(`http://18.231.76.48:3000/api/pages/${id}`);
         if (!res.ok) {
           setPageData(null);
           return;

@@ -54,7 +54,7 @@ const Create = () => {
     if (formData.musicFile) {
       form.append("music", formData.musicFile);
     }
-    const pageRes = await fetch("http://54.207.26.26:3001/api/pages", {
+    const pageRes = await fetch("http://18.231.76.48:3000/api/pages", {
       method: "POST",
       body: form,
     });
