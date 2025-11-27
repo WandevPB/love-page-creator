@@ -46,9 +46,8 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
     const prisma = new PrismaClient();
     const page = await prisma.page.create({
       data: {
-        recipient_name: recipientName || '',
         title: title || '',
-        message: message || '',
+        content: message || '',
         photos: photoUrls,
         music: musicUrl || null,
       },
