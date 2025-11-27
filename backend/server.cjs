@@ -38,7 +38,8 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
   try {
     console.log('req.files:', req.files);
     console.log('req.body:', req.body);
-    const { title, message } = req.body;
+    const title = req.body && req.body.title ? req.body.title : '';
+    const message = req.body && req.body.message ? req.body.message : '';
     const photoFiles = Array.isArray(req.files && req.files['photos']) ? req.files['photos'] : [];
     const musicFile = req.files && req.files['music'] ? req.files['music'][0] : null;
     const photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/photos/${file.filename}`);
