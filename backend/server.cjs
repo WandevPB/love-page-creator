@@ -2,7 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+
 const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const path = require('path');
 const fs = require('fs');
@@ -57,7 +59,6 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
       photos: photoUrls,
       music: musicUrl || null,
     });
-    const prisma = new PrismaClient();
     const page = await prisma.page.create({
       data: {
         title: title || '',
@@ -77,7 +78,6 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
 
 app.get('/api/pages', async (req, res) => {
   try {
-    const prisma = new PrismaClient();
     const pages = await prisma.page.findMany();
     // Adiciona recipientName vazio para compatibilidade
     const result = pages.map(page => ({
@@ -99,7 +99,6 @@ app.get('/api/pages', async (req, res) => {
 
 app.get('/api/pages/:id', async (req, res) => {
   try {
-    const prisma = new PrismaClient();
     const page = await prisma.page.findUnique({
       where: { id: req.params.id },
     });
