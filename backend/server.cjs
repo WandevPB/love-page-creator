@@ -29,6 +29,12 @@ const upload = multer({ storage });
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCount: 1 }]), async (req, res) => {
+      console.log('Dados enviados ao Prisma:', {
+        title: title || '',
+        content: message || '',
+        photos: photoUrls,
+        music: musicUrl || null,
+      });
   try {
     console.log('req.files:', req.files);
     console.log('req.body:', req.body);
