@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-  },
+      allowedHosts: ['sitedagabi.lat', 'www.sitedagabi.lat'],
+    },
   plugins: [react()],
   resolve: {
     alias: {
