@@ -17,7 +17,7 @@ const AdminPhotos = () => {
     // Buscar todas as páginas do backend Express/Prisma
     const fetchPages = async () => {
       try {
-        const res = await fetch("http://18.231.76.48:3001/api/pages");
+        const res = await fetch("http://18.231.76.48:3001/api/admin/pages");
         const data = await res.json();
         setPages(data || []);
       } catch (err) {
@@ -45,17 +45,22 @@ const AdminPhotos = () => {
           {pages.map((page, idx) => (
             <Card key={page.id || idx} className="p-4">
               <div className="mb-2">
-                <strong>Link:</strong> <a href={`/view/${page.id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">/view/{page.id}</a>
+                <strong>Link:</strong> <a href={page.link || `/view/${page.id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">{page.link || `/view/${page.id}`}</a>
               </div>
               <div className="mb-2">
-                <strong>Para:</strong> {page.recipient_name} <br />
+                <strong>Para:</strong> {page.recipientName || page.recipient_name} <br />
                 <strong>Título:</strong> {page.title}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
                 {Array.isArray(page.photos) && page.photos.map((photo: string, i: number) => (
                   <img key={i} src={photo} alt={`Foto ${i + 1}`} className="aspect-square w-full object-cover rounded" />
                 ))}
               </div>
+              {page.music && (
+                <div className="mb-2">
+                  <strong>Música:</strong> <audio src={page.music} controls />
+                </div>
+              )}
             </Card>
           ))}
         </div>
