@@ -17,7 +17,7 @@ const AdminPhotos = () => {
     // Buscar todas as páginas do backend Express/Prisma
     const fetchPages = async () => {
       try {
-        const res = await fetch("http://18.231.76.48:3001/api/admin/pages");
+        const res = await fetch("https://sitedagabi.lat/api/admin/pages");
         const data = await res.json();
         setPages(data || []);
       } catch (err) {
