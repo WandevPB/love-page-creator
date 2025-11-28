@@ -40,6 +40,10 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
       if (typeof req.body.message === 'string') message = req.body.message;
       if (typeof req.body.recipientName === 'string') recipientName = req.body.recipientName;
     }
+    // Se não houver dados mínimos, retorna erro
+    if (!title && !message && !recipientName && (!req.files || !req.files['photos'])) {
+      return res.status(400).json({ error: 'Dados insuficientes para criar página.' });
+    }
     const photoFiles = Array.isArray(req.files && req.files['photos']) ? req.files['photos'] : [];
     const musicFile = req.files && req.files['music'] ? req.files['music'][0] : null;
     const photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/photos/${file.filename}`);
@@ -84,7 +88,9 @@ app.get('/api/admin/pages', (req, res) => {
     const pagesPath = path.join(__dirname, 'uploads', 'pages.json');
     let pages = [];
     if (fs.existsSync(pagesPath)) {
-      pages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
+      try {
+        pages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
+      } catch (e) { pages = []; }
     }
     res.json(pages);
   } catch (err) {
