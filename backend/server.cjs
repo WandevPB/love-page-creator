@@ -4,6 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 
 // Removido Prisma, usaremos arquivo JSON local
+const crypto = require('crypto');
 
 const path = require('path');
 const fs = require('fs');
@@ -46,10 +47,12 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
     }
     const photoFiles = Array.isArray(req.files && req.files['photos']) ? req.files['photos'] : [];
     const musicFile = req.files && req.files['music'] ? req.files['music'][0] : null;
-    const photoUrls = photoFiles.map(file => `${req.protocol}://${req.get('host')}/uploads/photos/${file.filename}`);
+    // Garante que os links sejam sempre https
+    const host = req.get('host').replace(/^http:/, 'https:');
+    const photoUrls = photoFiles.map(file => `https://${host}/uploads/photos/${file.filename}`);
     let musicUrl = null;
     if (musicFile) {
-      musicUrl = `${req.protocol}://${req.get('host')}/uploads/music/${musicFile.filename}`;
+      musicUrl = `https://${host}/uploads/music/${musicFile.filename}`;
     }
     // Carregar páginas existentes
     const pagesPath = path.join(__dirname, 'uploads', 'pages.json');
@@ -59,8 +62,8 @@ app.post('/api/pages', upload.fields([{ name: 'photos' }, { name: 'music', maxCo
         pages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
       } catch (e) { pages = []; }
     }
-    // Gerar novo id
-    const newId = pages.length > 0 ? pages[pages.length - 1].id + 1 : 1;
+    // Gerar id aleatório
+    const newId = crypto.randomBytes(8).toString('hex');
     const createdAt = new Date().toISOString();
     const page = {
       id: newId,
